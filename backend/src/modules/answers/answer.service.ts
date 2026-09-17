@@ -1,3 +1,4 @@
+import { createResult } from "../results/result.service";
 import { getEnemQuestions } from "../questions/enem.service";
 
 type AnswerInput = {
@@ -11,7 +12,11 @@ export async function checkAnswer({
   questionIndex,
   alternative,
 }: AnswerInput) {
-  const data = await getEnemQuestions(year, 1, questionIndex);
+  const data = await getEnemQuestions(
+    year,
+    1,
+    questionIndex
+  );
 
   const question = data.questions[0];
 
@@ -19,14 +24,27 @@ export async function checkAnswer({
     throw new Error("Questão não encontrada");
   }
 
-  const normalizedAlternative = alternative.toUpperCase();
+  const selectedAlternative =
+    alternative.trim().toUpperCase();
 
-  const isCorrect =
-    question.correctAlternative === normalizedAlternative;
+  const correct =
+    question.correctAlternative ===
+    selectedAlternative;
+
+  const result = createResult({
+    year,
+    questionIndex: question.index,
+    selectedAlternative,
+    correctAlternative:
+      question.correctAlternative,
+    correct,
+  });
 
   return {
-    correct: isCorrect,
-    correctAlternative: question.correctAlternative,
+    correct,
+    correctAlternative:
+      question.correctAlternative,
     questionIndex: question.index,
+    resultId: result.id,
   };
 }
