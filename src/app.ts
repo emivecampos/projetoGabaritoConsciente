@@ -2,6 +2,7 @@ import express from "express";
 
 import { questionsRoutes } from "./modules/questions/questions.routes";
 import { answerRoutes } from "./modules/answers/answer.routes";
+import { resultRoutes } from "./modules/results/result.routes";
 
 export const app = express();
 
@@ -15,3 +16,4 @@ app.get("/health", (_req, res) => {
 
 app.use("/questions", questionsRoutes);
 app.use("/answers", answerRoutes);
+app.use("/results", resultRoutes);
