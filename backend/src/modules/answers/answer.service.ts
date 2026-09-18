@@ -33,6 +33,7 @@ export async function checkAnswer({
 
   const result = createResult({
     year,
+    discipline: question.discipline,
     questionIndex: question.index,
     selectedAlternative,
     correctAlternative:
@@ -45,6 +46,7 @@ export async function checkAnswer({
     correctAlternative:
       question.correctAlternative,
     questionIndex: question.index,
+    discipline: question.discipline,
     resultId: result.id,
   };
 }
