@@ -1,0 +1,14 @@
+// use prisma-8
+
+model Result {
+  id                  Uuid     @id @default(uuid())
+  year                Int
+  discipline          String
+  questionIndex       Int
+  selectedAlternative String
+  correctAlternative  String
+  correct             Boolean
+  answeredAt          DateTime @default(now())
+
+  @@map("results")
+}

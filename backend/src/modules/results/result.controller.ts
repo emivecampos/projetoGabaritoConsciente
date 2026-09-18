@@ -2,6 +2,8 @@ import { Request, Response } from "express";
 
 import {
   getResultsStats,
+  getResultsStatsByDiscipline,
+  getResultsStatsByYear,
   listResults,
 } from "./result.service";
 
@@ -19,6 +21,24 @@ export function getStats(
   res: Response
 ) {
   const stats = getResultsStats();
+
+  return res.json(stats);
+}
+
+export function getStatsByDiscipline(
+  _req: Request,
+  res: Response
+) {
+  const stats = getResultsStatsByDiscipline();
+
+  return res.json(stats);
+}
+
+export function getStatsByYear(
+  _req: Request,
+  res: Response
+) {
+  const stats = getResultsStatsByYear();
 
   return res.json(stats);
 }
