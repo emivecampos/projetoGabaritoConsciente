@@ -1,4 +1,4 @@
-import { Request, Response } from "express";
+import type { Request, Response } from "express";
 
 import {
   getResultsStats,
@@ -7,38 +7,74 @@ import {
   listResults,
 } from "./result.service";
 
-export function getResults(
+export async function getResults(
   _req: Request,
   res: Response
 ) {
-  const results = listResults();
+  try {
+    const results = await listResults();
 
-  return res.json(results);
+    return res.json(results);
+  } catch (error) {
+    console.error(error);
+
+    return res.status(500).json({
+      message: "Erro ao buscar resultados",
+    });
+  }
 }
 
-export function getStats(
+export async function getStats(
   _req: Request,
   res: Response
 ) {
-  const stats = getResultsStats();
+  try {
+    const stats = await getResultsStats();
 
-  return res.json(stats);
+    return res.json(stats);
+  } catch (error) {
+    console.error(error);
+
+    return res.status(500).json({
+      message: "Erro ao buscar estatísticas",
+    });
+  }
 }
 
-export function getStatsByDiscipline(
+export async function getStatsByDiscipline(
   _req: Request,
   res: Response
 ) {
-  const stats = getResultsStatsByDiscipline();
+  try {
+    const stats =
+      await getResultsStatsByDiscipline();
 
-  return res.json(stats);
+    return res.json(stats);
+  } catch (error) {
+    console.error(error);
+
+    return res.status(500).json({
+      message:
+        "Erro ao buscar estatísticas por disciplina",
+    });
+  }
 }
 
-export function getStatsByYear(
+export async function getStatsByYear(
   _req: Request,
   res: Response
 ) {
-  const stats = getResultsStatsByYear();
+  try {
+    const stats =
+      await getResultsStatsByYear();
 
-  return res.json(stats);
+    return res.json(stats);
+  } catch (error) {
+    console.error(error);
+
+    return res.status(500).json({
+      message:
+        "Erro ao buscar estatísticas por ano",
+    });
+  }
 }

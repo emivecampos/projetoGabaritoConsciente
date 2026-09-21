@@ -31,7 +31,7 @@ export async function checkAnswer({
     question.correctAlternative ===
     selectedAlternative;
 
-  const result = createResult({
+  const result = await createResult({
     year,
     discipline: question.discipline,
     questionIndex: question.index,

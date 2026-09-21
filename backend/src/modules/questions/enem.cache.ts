@@ -1,4 +1,4 @@
-import { EnemQuestionsResponse } from "./enem.types";
+import type { EnemQuestionsResponse } from "./enem.types";
 
 type CacheEntry = {
   data: EnemQuestionsResponse;
