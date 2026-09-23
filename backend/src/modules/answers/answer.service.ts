@@ -3,39 +3,42 @@ import { getEnemQuestions } from "../questions/enem.service";
 
 type AnswerInput = {
   year: number;
-  questionIndex: number;
+  offset: number;
   alternative: string;
 };
 
+export class QuestionNotFoundError extends Error {
+  constructor() {
+    super("Questão não encontrada");
+    this.name = "QuestionNotFoundError";
+  }
+}
+
 export async function checkAnswer({
   year,
-  questionIndex,
+  offset,
   alternative,
 }: AnswerInput) {
   const data = await getEnemQuestions(
     year,
     1,
-    questionIndex
+    offset
   );
 
   const question = data.questions[0];
 
   if (!question) {
-    throw new Error("Questão não encontrada");
+    throw new QuestionNotFoundError();
   }
 
-  const selectedAlternative =
-    alternative.trim().toUpperCase();
-
   const correct =
-    question.correctAlternative ===
-    selectedAlternative;
+    question.correctAlternative === alternative;
 
   const result = await createResult({
     year,
     discipline: question.discipline,
     questionIndex: question.index,
-    selectedAlternative,
+    selectedAlternative: alternative,
     correctAlternative:
       question.correctAlternative,
     correct,
