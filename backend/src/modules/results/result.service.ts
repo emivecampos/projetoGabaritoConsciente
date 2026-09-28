@@ -9,6 +9,13 @@ type CreateResultInput = {
   correct: boolean;
 };
 
+type ResultFilters = {
+  year?: number;
+  discipline?: string;
+  limit?: number;
+  offset?: number;
+};
+
 export async function createResult(
   input: CreateResultInput
 ) {
@@ -24,10 +31,60 @@ export async function createResult(
   return result;
 }
 
-export async function listResults() {
-  const results = await db.orm.public.Result.all();
+export async function listResults(
+  filters: ResultFilters = {}
+) {
+  let query = db.orm.public.Result;
 
-  return results;
+  if (filters.year !== undefined) {
+    query = query.where({
+      year: filters.year,
+    });
+  }
+
+  if (filters.discipline !== undefined) {
+    query = query.where({
+      discipline: filters.discipline,
+    });
+  }
+
+  const totalStats = await query.aggregate(
+    (agg) => ({
+      total: agg.count(),
+    })
+  );
+
+  let paginatedQuery = query.orderBy(
+    (result) => result.answeredAt.desc()
+  );
+
+  if (filters.offset !== undefined) {
+    paginatedQuery = paginatedQuery.offset(
+      filters.offset
+    );
+  }
+
+  if (filters.limit !== undefined) {
+    paginatedQuery = paginatedQuery.limit(
+      filters.limit
+    );
+  }
+
+  const results = await paginatedQuery.all();
+
+  return {
+    total: totalStats.total,
+    results,
+  };
+}
+
+export async function getResultById(id: string) {
+  const result =
+    await db.orm.public.Result.first({
+      id,
+    });
+
+  return result;
 }
 
 export async function getResultsStats() {
