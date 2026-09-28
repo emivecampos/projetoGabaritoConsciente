@@ -1,7 +1,4 @@
-import { randomUUID } from "node:crypto";
-import { Result } from "./result.types";
-
-const results: Result[] = [];
+import { db } from "../../prisma/db";
 
 type CreateResultInput = {
   year: number;
@@ -12,42 +9,110 @@ type CreateResultInput = {
   correct: boolean;
 };
 
-export function createResult(
+type ResultFilters = {
+  year?: number;
+  discipline?: string;
+  limit?: number;
+  offset?: number;
+};
+
+export async function createResult(
   input: CreateResultInput
-): Result {
-  const result: Result = {
-    id: randomUUID(),
+) {
+  const result = await db.orm.public.Result.create({
     year: input.year,
     discipline: input.discipline,
     questionIndex: input.questionIndex,
     selectedAlternative: input.selectedAlternative,
     correctAlternative: input.correctAlternative,
     correct: input.correct,
-    answeredAt: new Date(),
-  };
-
-  results.push(result);
+  });
 
   return result;
 }
 
-export function listResults(): Result[] {
-  return results;
+export async function listResults(
+  filters: ResultFilters = {}
+) {
+  let query = db.orm.public.Result;
+
+  if (filters.year !== undefined) {
+    query = query.where({
+      year: filters.year,
+    });
+  }
+
+  if (filters.discipline !== undefined) {
+    query = query.where({
+      discipline: filters.discipline,
+    });
+  }
+
+  const totalStats = await query.aggregate(
+    (agg) => ({
+      total: agg.count(),
+    })
+  );
+
+  let paginatedQuery = query.orderBy(
+    (result) => result.answeredAt.desc()
+  );
+
+  if (filters.offset !== undefined) {
+    paginatedQuery = paginatedQuery.offset(
+      filters.offset
+    );
+  }
+
+  if (filters.limit !== undefined) {
+    paginatedQuery = paginatedQuery.limit(
+      filters.limit
+    );
+  }
+
+  const results = await paginatedQuery.all();
+
+  return {
+    total: totalStats.total,
+    results,
+  };
 }
 
-export function getResultsStats() {
-  const total = results.length;
+export async function getResultById(id: string) {
+  const result =
+    await db.orm.public.Result.first({
+      id,
+    });
 
-  const correct = results.filter(
-    (result) => result.correct
-  ).length;
+  return result;
+}
 
+export async function getResultsStats() {
+  const stats = await db.orm.public.Result.aggregate(
+    (agg) => ({
+      total: agg.count(),
+    })
+  );
+
+  const correctStats =
+    await db.orm.public.Result
+      .where({
+        correct: true,
+      })
+      .aggregate((agg) => ({
+        correct: agg.count(),
+      }));
+
+  const total = stats.total;
+  const correct = correctStats.correct;
   const incorrect = total - correct;
 
   const accuracy =
     total === 0
       ? 0
-      : Number(((correct / total) * 100).toFixed(2));
+      : Number(
+          ((correct / total) * 100).toFixed(2)
+        );
 
   return {
     total,
@@ -57,76 +122,94 @@ export function getResultsStats() {
   };
 }
 
-export function getResultsStatsByDiscipline() {
-  const stats = new Map<
-    string,
-    {
-      total: number;
-      correct: number;
-    }
-  >();
+export async function getResultsStatsByDiscipline() {
+  const grouped =
+    await db.orm.public.Result
+      .groupBy("discipline")
+      .aggregate((agg) => ({
+        total: agg.count(),
+      }));
 
-  for (const result of results) {
-    const current = stats.get(result.discipline) ?? {
-      total: 0,
-      correct: 0,
-    };
+  const results = [];
 
-    current.total += 1;
+  for (const group of grouped) {
+    const correctStats =
+      await db.orm.public.Result
+        .where({
+          discipline: group.discipline,
+          correct: true,
+        })
+        .aggregate((agg) => ({
+          correct: agg.count(),
+        }));
 
-    if (result.correct) {
-      current.correct += 1;
-    }
+    const correct = correctStats.correct;
+    const incorrect = group.total - correct;
 
-    stats.set(result.discipline, current);
+    const accuracy =
+      group.total === 0
+        ? 0
+        : Number(
+            (
+              (correct / group.total) *
+              100
+            ).toFixed(2)
+          );
+
+    results.push({
+      discipline: group.discipline,
+      total: group.total,
+      correct,
+      incorrect,
+      accuracy,
+    });
   }
 
-  return Array.from(stats.entries()).map(
-    ([discipline, data]) => ({
-      discipline,
-      total: data.total,
-      correct: data.correct,
-      incorrect: data.total - data.correct,
-      accuracy: Number(
-        ((data.correct / data.total) * 100).toFixed(2)
-      ),
-    })
-  );
+  return results;
 }
 
-export function getResultsStatsByYear() {
-  const stats = new Map<
-    number,
-    {
-      total: number;
-      correct: number;
-    }
-  >();
+export async function getResultsStatsByYear() {
+  const grouped =
+    await db.orm.public.Result
+      .groupBy("year")
+      .aggregate((agg) => ({
+        total: agg.count(),
+      }));
 
-  for (const result of results) {
-    const current = stats.get(result.year) ?? {
-      total: 0,
-      correct: 0,
-    };
+  const results = [];
 
-    current.total += 1;
+  for (const group of grouped) {
+    const correctStats =
+      await db.orm.public.Result
+        .where({
+          year: group.year,
+          correct: true,
+        })
+        .aggregate((agg) => ({
+          correct: agg.count(),
+        }));
 
-    if (result.correct) {
-      current.correct += 1;
-    }
+    const correct = correctStats.correct;
+    const incorrect = group.total - correct;
 
-    stats.set(result.year, current);
+    const accuracy =
+      group.total === 0
+        ? 0
+        : Number(
+            (
+              (correct / group.total) *
+              100
+            ).toFixed(2)
+          );
+
+    results.push({
+      year: group.year,
+      total: group.total,
+      correct,
+      incorrect,
+      accuracy,
+    });
   }
 
-  return Array.from(stats.entries()).map(
-    ([year, data]) => ({
-      year,
-      total: data.total,
-      correct: data.correct,
-      incorrect: data.total - data.correct,
-      accuracy: Number(
-        ((data.correct / data.total) * 100).toFixed(2)
-      ),
-    })
-  );
+  return results;
 }

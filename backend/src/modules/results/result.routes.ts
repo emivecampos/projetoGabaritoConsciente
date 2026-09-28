@@ -1,6 +1,7 @@
 import { Router } from "express";
 
 import {
+  getResult,
   getResults,
   getStats,
   getStatsByDiscipline,
@@ -22,3 +23,5 @@ resultRoutes.get(
   "/stats/by-year",
   getStatsByYear
 );
+
+resultRoutes.get("/:id", getResult);
